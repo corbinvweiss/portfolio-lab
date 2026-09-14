@@ -29,7 +29,10 @@ week 1.
 - Writes are append-only dated snapshots; the curated view is the latest capture per key.
 - A new config knob needs a `.get(...)` default in `experiment.py` and a line in both
   `configs/baseline.yaml` and `configs/synthetic.yaml`.
-- `ruff check src tests` clean; line length 100; target py310.
+- `ruff check src tests` clean; line length 100; target py310. On 2026-09-14 the untouched
+  repo has 11 findings (unsorted imports, `date.today()`, `dict()` literals, an unused
+  import). Clear them as the first commit of Task 1 so every later check starts from zero;
+  `ruff check --fix` handles six, the rest are one-line edits.
 - Commit after every task with a message that says what changed and why.
 - Time budget: 5-10 hours including the lesson. Tasks 1-4 are about an hour each.
 
