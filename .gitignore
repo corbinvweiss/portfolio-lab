@@ -1,0 +1,25 @@
+# Data is never committed - the ingestion script is the reproducible artifact.
+data/raw/*
+data/curated/*
+!data/raw/.gitkeep
+!data/curated/.gitkeep
+
+# Backtest outputs
+runs/
+*.png
+!docs/*.png
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.DS_Store
+.env

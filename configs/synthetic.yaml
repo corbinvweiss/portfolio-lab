@@ -1,0 +1,36 @@
+name: synthetic_demo
+data:
+  source: synthetic
+  as_of: null
+  n_days: 3000
+signals:
+  ts_momentum:
+    lookback: 252
+    skip: 21
+    weight: 0.5
+  xs_momentum:
+    lookback: 252
+    skip: 21
+    weight: 0.5
+regime:
+  enabled: true
+  vol_window: 21
+  vol_ref_window: 252
+  trend_window: 200
+  floor: 0.25
+risk:
+  cov_method: shrunk
+  cov_window: 252
+budget:
+  target_vol: 0.1
+  max_gross: 1.0
+  max_weight: 0.35
+  long_only: true
+backtest:
+  warmup: 300
+  rebalance: monthly
+  cost_bps: 5.0
+allocators:
+- vol_target
+- risk_parity
+- mean_variance
