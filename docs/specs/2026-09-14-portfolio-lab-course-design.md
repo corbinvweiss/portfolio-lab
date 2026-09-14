@@ -414,7 +414,7 @@ docs/
     lessons/NN-topic.md    Corbin's write-ups; the deliverable
   specs/                   design docs, including this one
   decisions/NNNN-title.md  short records when a stage contract or invariant changes
-  reference/               data-sources.md, reading-list.md, glossary.md
+  reference/               starting-point.md, data-sources.md, reading-list.md, glossary.md
   figures/NN-slug.png      the only committed images
 ```
 

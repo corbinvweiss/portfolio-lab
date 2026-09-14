@@ -52,11 +52,11 @@ def test_syllabus_links_resolve():
     assert not broken, f"broken links in SYLLABUS.md: {broken}"
 
 
-def test_figures_are_referenced_by_a_lesson_or_readme():
+def test_figures_are_referenced_by_a_document():
     figures = DOCS / "figures"
     if not figures.exists():
         return
-    corpus = "\n".join(p.read_text() for p in _lessons())
-    corpus += (DOCS.parent / "README.md").read_text()
+    documents = list(DOCS.rglob("*.md")) + [DOCS.parent / "README.md"]
+    corpus = "\n".join(p.read_text() for p in documents)
     unreferenced = [p.name for p in figures.glob("*.png") if p.name not in corpus]
     assert not unreferenced, f"figures no document references: {unreferenced}"

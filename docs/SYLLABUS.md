@@ -40,6 +40,7 @@ is done when it is written. Design rationale lives in the
 
 ## Reference
 
+- [The code before week 1](reference/starting-point.md)
 - [Data sources and vendor quirks](reference/data-sources.md)
 - [Reading list](reference/reading-list.md)
 - [Glossary](reference/glossary.md)
