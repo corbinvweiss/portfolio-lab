@@ -394,3 +394,47 @@ ratings; Bogle's cost matters hypothesis; Sharpe, "The Arithmetic of Active Mana
 
 Data: Norgate (norgatedata.com), Sharadar via Nasdaq Data Link, EODHD, Tiingo, Stooq,
 FRED (DTB3, DGS10, SOFR, VIXCLS), Ken French Data Library.
+
+## 10. Repository layout and documentation rules
+
+Adopted 2026-09-14.
+
+```
+configs/            run YAMLs and universe CSVs only
+scripts/            one-off reproducible data scripts; anything reused moves into the plab CLI
+src/portfolio_lab/  the code
+tests/              the code's tests plus tests/test_docs.py for documentation hygiene
+notebooks/          scratch, gitignored except notebooks/README.md
+data/, runs/        gitignored outputs
+docs/
+  SYLLABUS.md       the 12-week table; links each week to its brief and lesson; the only index
+  course/
+    lesson-template.md
+    briefs/NN-topic.md     Claude's weekly brief (what to build, tests, derivations)
+    lessons/NN-topic.md    Corbin's write-ups; the deliverable
+  specs/                   design docs, including this one
+  decisions/NNNN-title.md  short records when a stage contract or invariant changes
+  reference/               data-sources.md, reading-list.md, glossary.md
+  figures/NN-slug.png      the only committed images
+```
+
+Rules:
+
+- Numbering is permanent. Lessons and briefs are numbered by week and never renumbered. A
+  dropped week leaves a gap; a split week gets a suffix such as `09a`.
+- Ownership. Corbin writes lessons, Claude writes briefs. Neither edits the other's file
+  beyond typo fixes raised in review.
+- Every number is reproducible. Each table in a lesson cites the config file, the git SHA,
+  and the snapshot date beside it.
+- README is one screen: what the repo is, quick start, link to the syllabus. No concept
+  content.
+- CLAUDE.md is for the code only: commands, invariants, extension points, under about 150
+  lines. Course context lives in the syllabus.
+- Contract changes get a decision record under `docs/decisions/`; the affected spec section
+  is marked superseded rather than rewritten.
+- Reference docs hold no dated working notes. "What went wrong this week" belongs in the
+  lesson.
+- Figures are referenced from exactly one lesson (or the README) and named after it. Nothing
+  under `runs/` is committed.
+- `tests/test_docs.py` enforces the lesson template headings, numbered filenames, resolving
+  syllabus links, and referenced figures.

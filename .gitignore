@@ -7,7 +7,7 @@ data/curated/*
 # Backtest outputs
 runs/
 *.png
-!docs/*.png
+!docs/figures/*.png
 
 __pycache__/
 *.py[cod]
@@ -23,3 +23,7 @@ htmlcov/
 .ipynb_checkpoints/
 .DS_Store
 .env
+
+# Notebooks are scratch
+notebooks/*
+!notebooks/README.md

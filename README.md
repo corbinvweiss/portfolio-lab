@@ -10,10 +10,12 @@ Twelve liquid ETFs, three allocators that interpret "risk budget" three differen
 ways, and a backtest engine built so that lookahead bias is structurally
 difficult rather than merely discouraged.
 
+Course syllabus, briefs and lessons: [docs/SYLLABUS.md](docs/SYLLABUS.md).
+
 The point is not to find a strategy. The point is to see where each piece plugs
 in, and to develop a feel for which pieces move the result and which do not.
 
-![tearsheet](docs/tearsheet.png)
+![tearsheet](docs/figures/00-tearsheet.png)
 
 ## Quick start
 
