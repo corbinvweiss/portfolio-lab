@@ -115,7 +115,7 @@ restatements, and their dates should line up with ex-dividend dates.
 | Modify `configs/baseline.yaml`, `configs/synthetic.yaml` | `data.universe` line |
 | Create `configs/week1.yaml` | Store-backed run on the week 1 universe |
 | Create `tests/test_returns.py`, `tests/test_universe.py`, `tests/test_rates.py`, `tests/test_snapshots.py` | One test file per unit |
-| Create `docs/lessons/01-data-integrity-and-return-math.md` | The deliverable |
+| Create `docs/course/lessons/01-data-integrity.md` | The deliverable |
 
 ---
 
@@ -628,7 +628,7 @@ git commit -m "Add snapshot diff and a data.universe config knob"
 ### Task 5: The experiment and the lesson
 
 **Files:**
-- Create: `docs/lessons/01-data-integrity-and-return-math.md`
+- Create: `docs/course/lessons/01-data-integrity.md`
 - Create: `notebooks/` scratch if you want plots; not committed unless you choose to
 
 This task has a calendar dependency: the second snapshot must be taken about a week after
@@ -701,7 +701,7 @@ a ticker's history, and what kind of vendor change would *not* be harmless.
 
 - [ ] **Step 7: Write the lesson**
 
-`docs/lessons/01-data-integrity-and-return-math.md` following the template in the spec.
+`docs/course/lessons/01-data-integrity.md` following the template in the spec.
 The "Concept and derivation" section must contain, in your own words and notation:
 
 1. the two return identities and the cross-time vs cross-asset asymmetry;
@@ -717,7 +717,7 @@ even if the answer is short.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add docs/lessons/01-data-integrity-and-return-math.md
+git add docs/course/lessons/01-data-integrity.md
 git commit -m "Lesson 1: data integrity and return math"
 ```
 
