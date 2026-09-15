@@ -21,7 +21,7 @@ Two design choices worth understanding:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import duckdb
@@ -61,7 +61,7 @@ class ParquetDuckStore(PriceStore):
 
     # -- writing ---------------------------------------------------------
     def write_snapshot(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
-        captured_on = captured_on or date.today()
+        captured_on = captured_on or datetime.now(tz=timezone.utc).date()
         _validate_long_prices(df)
         out = self.raw_dir / f"prices_captured={captured_on.isoformat()}.parquet"
         df = df.copy()
@@ -145,7 +145,7 @@ class InMemoryStore(PriceStore):
 
     def write_snapshot(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
         _validate_long_prices(df)
-        self._snaps[captured_on or date.today()] = df.copy()
+        self._snaps[captured_on or datetime.now(tz=timezone.utc).date()] = df.copy()
         return Path("<memory>")
 
     def load_prices(self, as_of: date | None = None) -> pd.DataFrame:

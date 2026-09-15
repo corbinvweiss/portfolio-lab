@@ -10,7 +10,11 @@ ALLOCATORS = {
 }
 
 __all__ = [
-    "Allocator", "RiskBudget", "apply_constraints",
-    "VolTargetAllocator", "RiskParityAllocator", "MeanVarianceAllocator",
     "ALLOCATORS",
+    "Allocator",
+    "MeanVarianceAllocator",
+    "RiskBudget",
+    "RiskParityAllocator",
+    "VolTargetAllocator",
+    "apply_constraints",
 ]

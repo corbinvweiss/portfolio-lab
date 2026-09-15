@@ -11,7 +11,7 @@ what you saw before.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -60,5 +60,5 @@ def fetch_prices(
 
 def ingest(store, tickers=TICKERS, start: str = "2005-01-01", end: str | None = None):
     df = fetch_prices(tickers, start=start, end=end)
-    path = store.write_snapshot(df, captured_on=date.today())
+    path = store.write_snapshot(df, captured_on=datetime.now(timezone.utc).date())
     return path, df

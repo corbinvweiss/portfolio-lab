@@ -95,7 +95,10 @@ def _labelled_ends(ax, ends: dict, colors: dict, min_gap_frac: float = 0.062) ->
             # Leader line so a nudged label still points at its series.
             ax.annotate(
                 "", xy=(x, value), xytext=(x, y), textcoords="data",
-                arrowprops=dict(arrowstyle="-", color=colors[name], linewidth=0.8, alpha=0.7),
+                arrowprops={
+                    "arrowstyle": "-", "color": colors[name],
+                    "linewidth": 0.8, "alpha": 0.7,
+                },
             )
 
 

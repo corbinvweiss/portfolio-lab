@@ -55,7 +55,7 @@ def test_engine_ignores_the_future(synth):
     def signal_fn(px):
         return TimeSeriesMomentum().compute(px)
 
-    kwargs = dict(warmup=400, rebalance="monthly", cov_window=252)
+    kwargs = {"warmup": 400, "rebalance": "monthly", "cov_window": 252}
     clean = run_backtest(prices, signal_fn, VolTargetAllocator(), BUDGET, **kwargs)
     dirty = run_backtest(corrupted, signal_fn, VolTargetAllocator(), BUDGET, **kwargs)
 

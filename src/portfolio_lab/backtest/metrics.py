@@ -29,7 +29,7 @@ def summarise(returns: pd.Series, weights: pd.DataFrame | None = None) -> dict:
         "calmar": float(cagr / abs(drawdown.min())) if drawdown.min() < 0 else np.nan,
         "hit_rate": float((r > 0).mean()),
         "worst_day": float(r.min()),
-        "n_days": int(len(r)),
+        "n_days": len(r),
     }
     if weights is not None and not weights.empty:
         # Annualise by elapsed time, not by row count: `weights` here holds one

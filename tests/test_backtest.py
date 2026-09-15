@@ -1,9 +1,11 @@
 """End-to-end behaviour of the engine."""
 import numpy as np
-import pandas as pd
 
 from portfolio_lab.allocate import (
-    MeanVarianceAllocator, RiskBudget, RiskParityAllocator, VolTargetAllocator,
+    MeanVarianceAllocator,
+    RiskBudget,
+    RiskParityAllocator,
+    VolTargetAllocator,
 )
 from portfolio_lab.backtest.costs import LinearCostModel
 from portfolio_lab.backtest.engine import rebalance_dates, run_backtest
