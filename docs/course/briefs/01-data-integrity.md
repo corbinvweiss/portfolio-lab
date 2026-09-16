@@ -133,7 +133,7 @@ restatements, and their dates should line up with ex-dividend dates.
   - `annualise_vol(daily: pd.Series, periods: int = 252) -> float`
   - `daily_rate_from_annual(annual_pct: pd.Series, periods: int = 252) -> pd.Series`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 """Return identities every later lesson leans on."""
@@ -189,22 +189,22 @@ def test_daily_rate_from_annual_compounds_back():
     assert (1 + d.iloc[0]) ** 252 == pytest.approx(1.05)
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/test_returns.py -q`
 Expected: ImportError, `portfolio_lab.data.returns` does not exist.
 
-- [ ] **Step 3: Implement `returns.py`**
+- [x] **Step 3: Implement `returns.py`**
 
 Hints: `pct_change()` and `np.log(prices).diff()`; `compound` is `np.prod(1 + r.dropna())`.
 Keep the module free of any import from the rest of the package. Write a module docstring
 that states the two identities and the cross-time vs cross-asset asymmetry.
 
-- [ ] **Step 4: Run to verify they pass, then lint**
+- [x] **Step 4: Run to verify they pass, then lint**
 
 Run: `.venv/bin/python -m pytest tests/test_returns.py -q && .venv/bin/ruff check src tests`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/portfolio_lab/data/returns.py tests/test_returns.py
@@ -230,7 +230,7 @@ git commit -m "Add return identities module with tests for log/simple compoundin
     - `.members(as_of: date) -> tuple[str, ...]` (tickers with `member_from <= as_of` and `member_to` unset or `>= as_of`)
   - `ETF_SLEEVE`, `TICKERS`, `SLEEVES` remain as the default universe so existing code and tests keep working; `DEFAULT_UNIVERSE = Universe(ETF_SLEEVE)`.
 
-- [ ] **Step 1: Create the seed file**
+- [x] **Step 1: Create the seed file**
 
 `configs/universe_week1.csv`. `member_from` is the first date this course includes the
 asset, not its listing date; week 5 replaces this hand-made seed with vendor membership.
@@ -247,9 +247,10 @@ JNJ,Johnson & Johnson,equity,2015-01-02,
 XOM,Exxon Mobil,equity,2015-01-02,
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```python
+import dataclasses
 from datetime import date
 
 from portfolio_lab.data.universe import DEFAULT_UNIVERSE, Asset, Universe
@@ -297,28 +298,28 @@ def test_asset_is_frozen():
     a = Asset("X", "x", "equity", date(2015, 1, 2), None)
     try:
         a.ticker = "Y"
-    except Exception:
+    except dataclasses.FrozenInstanceError:
         return
     raise AssertionError("Asset must be immutable")
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/test_universe.py -q`
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 Hints: extend `Asset` with the two date fields, defaulting `member_from=date(1900, 1, 1)`
 and `member_to=None` so the existing `ETF_SLEEVE` literal still constructs. Parse the CSV
 with `csv.DictReader`, not pandas: eight rows do not need a DataFrame, and the date
 parsing is explicit. Keep `TICKERS` and `SLEEVES` derived from `ETF_SLEEVE` exactly as now.
 
-- [ ] **Step 5: Run the whole suite and lint**
+- [x] **Step 5: Run the whole suite and lint**
 
 Run: `.venv/bin/python -m pytest -q && .venv/bin/ruff check src tests`
 Expected: all previous tests still pass; nothing else imports the new fields yet.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/portfolio_lab/data/universe.py configs/universe_week1.csv tests/test_universe.py

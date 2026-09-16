@@ -1,0 +1,9 @@
+ticker,name,sleeve,member_from,member_to
+SPY,US large cap equity,equity,2015-01-02,
+EFA,Developed ex-US equity,equity,2015-01-02,
+IEF,US intermediate treasury,duration,2015-01-02,
+GLD,Gold,real_asset,2015-01-02,
+AAPL,Apple,equity,2015-01-02,
+MSFT,Microsoft,equity,2015-01-02,
+JNJ,Johnson & Johnson,equity,2015-01-02,
+XOM,Exxon Mobil,equity,2015-01-02,
