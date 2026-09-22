@@ -42,7 +42,7 @@ class PriceStore(ABC):
 
     @abstractmethod
     def write_rates(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
-        """df: long frame: (date, series id, value) -> path written to. 
+        """df: long frame: (date, series id, value) -> path written to.
         Validates that (date, series) keys never repeat or are missing."""
 
     @abstractmethod
@@ -80,41 +80,68 @@ class ParquetDuckStore(PriceStore):
         df = df.copy()
         df["captured_on"] = pd.Timestamp(captured_on)
         df.to_parquet(out, index=False)
-        self._rebuild_curated()
+        self._collapse_snapshots("prices", ("date", "ticker"), ("close", "volume"))
         return out
 
     def write_rates(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
         captured_on = captured_on or datetime.now(tz=timezone.utc).date()
-        _validate_rates(df)
+        _validate_long_rates(df)
         out = self.raw_dir / f"rates_captured={captured_on.isoformat()}.parquet"
         df = df.copy()
         df["captured_on"] = pd.Timestamp(captured_on)
         df.to_parquet(out, index=False)
+        self._collapse_snapshots("rates", ("date", "series"), ("value",))
         return out
 
-
-    def _rebuild_curated(self) -> None:
-        """Collapse all snapshots to the latest observation per (date, ticker)."""
-        files = sorted(self.raw_dir.glob("prices_captured=*.parquet"))
+    def _collapse_snapshots(
+        self, prefix: str, key_cols: tuple[str, ...], value_cols: tuple[str, ...]
+    ) -> None:
+        """Collapse all snapshots to the latest observation per key_cols set"""
+        files = sorted(self.raw_dir.glob(f"{prefix}_captured=*.parquet"))
         if not files:
             return
         con = duckdb.connect()
-        glob = str(self.raw_dir / "prices_captured=*.parquet")
         con.execute(
             f"""
             COPY (
-                SELECT date, ticker, close, volume
-                FROM (
-                    SELECT *, ROW_NUMBER() OVER (
-                        PARTITION BY date, ticker ORDER BY captured_on DESC
-                    ) AS rn
-                    FROM read_parquet('{glob}')
-                ) WHERE rn = 1
-                ORDER BY date, ticker
-            ) TO '{self.curated_dir / "prices.parquet"}' (FORMAT PARQUET)
-            """
+                {self._latest_per_key_sql(prefix, key_cols=key_cols, value_cols=value_cols)}
+                ORDER BY {', '.join(key_cols)}
+            ) TO '{self.curated_dir / f"{prefix}.parquet"}' (FORMAT PARQUET)"""
         )
         con.close()
+
+    def _latest_per_key_sql(
+        self,
+        prefix: str,
+        key_cols: tuple[str, ...],
+        value_cols: tuple[str, ...],
+        as_of: date | None = None,
+        extra_where: str = "",
+    ) -> str:
+        """return the latest values per key with optional as_of date.
+
+        extra_where is simply the predicate with no AND, e.g. series = {series}"""
+        preds: list[str] = []
+        where_clause: str = ""
+        if as_of is not None:
+            preds.append(f"captured_on <= DATE '{as_of.isoformat()}'")
+        if extra_where != "":
+            preds.append(extra_where)
+        if len(preds) > 0:
+            where_clause = f"WHERE {' AND '.join(preds)}"
+
+        sql = f"""
+            SELECT {", ".join(key_cols + value_cols)}
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (
+                    PARTITION BY {", ".join(key_cols)}
+                    ORDER BY captured_on DESC
+                ) AS rn
+                FROM read_parquet('{self.raw_dir / prefix}_captured=*.parquet')
+                {where_clause}
+            ) WHERE rn = 1"""
+
+        return sql
 
     # -- reading ---------------------------------------------------------
     def load_prices(self, as_of: date | None = None) -> pd.DataFrame:
@@ -129,23 +156,13 @@ class ParquetDuckStore(PriceStore):
                 path = self.curated_dir / "prices.parquet"
                 if not path.exists():
                     raise FileNotFoundError(
-                        f"No curated prices at {path}. Run ingestion first "
-                        "(scripts/ingest.py) or use the synthetic generator."
+                        f"No curated prices at {path}. Run `plab ingest` first "
+                        "or use the synthetic generator."
                     )
                 long = con.execute(f"SELECT * FROM read_parquet('{path}')").df()
             else:
-                glob = str(self.raw_dir / "prices_captured=*.parquet")
-                long = con.execute(
-                    f"""
-                    SELECT date, ticker, close, volume FROM (
-                        SELECT *, ROW_NUMBER() OVER (
-                            PARTITION BY date, ticker ORDER BY captured_on DESC
-                        ) AS rn
-                        FROM read_parquet('{glob}')
-                        WHERE captured_on <= DATE '{as_of.isoformat()}'
-                    ) WHERE rn = 1
-                    """
-                ).df()
+                long = con.execute(self._latest_per_key_sql(
+                    "prices", ("date", "ticker"), ("close", "volume"), as_of=as_of)).df()
         finally:
             con.close()
         wide = long.pivot(index="date", columns="ticker", values="close").sort_index()
@@ -155,36 +172,33 @@ class ParquetDuckStore(PriceStore):
 
     def load_rate(self, series: str, as_of: date | None = None) -> pd.Series:
         """Reads the rates for the selected series.
-        If as_of is None, returns the latest version of all rates """
+        If as_of is None, returns the latest curated version of all rates """
         # Rate schema: (date, series, captured_on, value)
         # check for whether there are any rates parquet files
-        pattern = self.raw_dir / "rates_captured=*.parquet"
-        if not list(self.raw_dir.glob(pattern.name)):
-            raise FileNotFoundError("No rates parquets found. Run write_rates first.")
-
         con = duckdb.connect()
-        # if as_of has a value, restrict captured_on to before as_of
-        as_of_clause = "" if as_of is None else f"AND captured_on <= '{as_of.isoformat()}'"
-
-        # load date, values prioritized by most recent captured_on
-        query = f"""
-                SELECT date, value FROM (
-                    SELECT *, ROW_NUMBER() OVER (
-                        PARTITION BY date, series ORDER BY captured_on DESC
-                    ) AS rn
-                    FROM read_parquet('{pattern}') 
-                    WHERE series = '{series}' {as_of_clause}
-                ) WHERE rn = 1
-                """
         try:
-            raw = con.execute(query).df()
+            if as_of is None:
+                path = self.curated_dir / "rates.parquet"
+                if not path.exists():
+                    raise FileNotFoundError(
+                        f"No curated rates at {path}. Run `plab ingest-rates` first."
+                    )
+                # `?` is DuckDB parameter binding: the series name never enters the SQL text.
+                long = con.execute(
+                    f"SELECT * FROM read_parquet('{path}') WHERE series = ?", [series]
+                ).df()
+            else:
+                sql = self._latest_per_key_sql(
+                    "rates", ("date", "series"), ("value",), as_of=as_of, extra_where="series = ?"
+                )
+                long = con.execute(sql, [series]).df()
         finally:
             con.close()
 
-        if raw.empty:
-            raise FileNotFoundError("Rates series loaded empty.")
-        # set the date column as the index, and select the value column
-        s = raw.set_index("date")["value"]
+        if long.empty:
+            raise FileNotFoundError(f"Rates for series '{series}' loaded empty.")
+        # set the index to the date column, and select the value, reshaping to a series.
+        s = long.set_index("date")["value"]
         # convert the index to a DatetimeIndex
         s.index = pd.to_datetime(s.index)
         # drop the index name
@@ -203,8 +217,9 @@ class InMemoryStore(PriceStore):
     """For tests and synthetic runs -- same contract, no disk."""
 
     def __init__(self) -> None:
-        self._snaps: dict[date, pd.DataFrame] = {} # Key: the captured_on date of the snapshot. Value: price frame (date, ticker, close, volume?)
-        self._rates: dict[date, pd.DataFrame] = {} # Key: the captured_on date of the snapshot. Value: rate frame (date, series, value)
+        # Both dicts: key is the captured_on date, value is the long frame as written.
+        self._snaps: dict[date, pd.DataFrame] = {}  # (date, ticker, close[, volume])
+        self._rates: dict[date, pd.DataFrame] = {}  # (date, series, value)
 
     def write_snapshot(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
         _validate_long_prices(df)
@@ -223,9 +238,9 @@ class InMemoryStore(PriceStore):
         return wide
 
     def write_rates(self, df: pd.DataFrame, captured_on: date | None = None) -> Path:
-        """df: long frame: (date, series id, value) -> path written to. 
+        """df: long frame: (date, series id, value) -> path written to.
         Validates that (date, series) keys never repeat or are missing."""
-        _validate_rates(df)
+        _validate_long_rates(df)
         self._rates[captured_on or datetime.now(tz=timezone.utc).date()] = df.copy()
         return Path("<memory>")
 
@@ -246,8 +261,6 @@ class InMemoryStore(PriceStore):
         s.index.name = None
         # sort the results by the index and rename to the series name
         return s.sort_index().rename(series)
-        
-        
 
     def snapshots(self) -> list[date]:
         return sorted(self._snaps)
@@ -269,8 +282,8 @@ def _validate_long_prices(df: pd.DataFrame) -> None:
 REQUIRED_RATE_COLUMNS = {"date", "series", "value"}
 
 
-def _validate_rates(df: pd.DataFrame) -> None:
-    """df: DataFrame of (date, series, value). 
+def _validate_long_rates(df: pd.DataFrame) -> None:
+    """df: DataFrame of (date, series, value).
     Enforces no missing columns or repeated (date, series) keys"""
     missing = REQUIRED_RATE_COLUMNS - set(df.columns)
     if missing:
