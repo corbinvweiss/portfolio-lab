@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +34,10 @@ def main(argv: list[str] | None = None) -> int:
     ing_r.add_argument("--series", default=DEFAULT_SERIES)
     ing_r.add_argument("--start", default="2015-01-01")
 
+    diff_p = sub.add_parser("diff-snapshots", help="diff snapshots between two dates")
+    diff_p.add_argument("earlier", type=date.fromisoformat)
+    diff_p.add_argument("later", type=date.fromisoformat)
+
     sub.add_parser("snapshots", help="list captured snapshots")
 
     args = parser.parse_args(argv)
@@ -53,6 +58,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "snapshots":
         for d in ParquetDuckStore().snapshots():
             print(d.isoformat())
+        return 0
+
+    if args.command == "diff-snapshots":
+        from .data.snapshots import snapshot_diff
+        df = snapshot_diff(ParquetDuckStore(), args.earlier, args.later)
+        print(df.to_string(index=False))
+        print(f"{len(df)} restated rows between {args.earlier} and {args.later}")
         return 0
 
     cfg = load_config(args.config)

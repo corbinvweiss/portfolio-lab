@@ -48,3 +48,8 @@ def test_rejects_bad_frames(store):
     dup = _frame([date(2024, 1, 2)] * 2, ["AAA"], 100.0)
     with pytest.raises(ValueError):
         store.write_snapshot(dup, date(2024, 1, 3))
+
+
+def test_load_prices_as_of_on_empty_store_raises(store):
+    with pytest.raises(FileNotFoundError):
+        store.load_prices(as_of=date(2024, 1, 1))

@@ -12,7 +12,7 @@ from .backtest.costs import LinearCostModel
 from .backtest.engine import run_backtest
 from .data.store import ParquetDuckStore
 from .data.synthetic import make_synthetic_prices
-from .data.universe import SLEEVES, TICKERS
+from .data.universe import DEFAULT_UNIVERSE, Universe
 from .signals.base import blend
 from .signals.momentum import CrossSectionalMomentum, TimeSeriesMomentum
 from .signals.regime import VolTrendRegime
@@ -27,14 +27,19 @@ def load_config(path: str | Path) -> dict:
 
 def load_prices(cfg: dict, store=None) -> pd.DataFrame:
     src = cfg["data"].get("source", "store")
+    universe = _universe_from_cfg(cfg)
     if src == "synthetic":
-        long, _ = make_synthetic_prices(TICKERS, n_days=cfg["data"].get("n_days", 2520))
+        long, _ = make_synthetic_prices(universe.tickers, n_days=cfg["data"].get("n_days", 2520))
         return long.pivot(index="date", columns="ticker", values="close").pipe(
             lambda d: d.set_axis(pd.to_datetime(d.index)).rename_axis(None, axis=1)
         ).sort_index()
     store = store or ParquetDuckStore()
     as_of = cfg["data"].get("as_of")
-    return store.load_prices(as_of=date.fromisoformat(as_of) if as_of else None)
+    wide = store.load_prices(as_of=date.fromisoformat(as_of) if as_of else None)
+    missing = set(universe.tickers) - set(wide.columns)
+    if missing:
+        raise KeyError(f"Loaded prices are missing tickers: {', '.join(sorted(missing))}")
+    return wide[list(universe.tickers)]
 
 
 def build_signal_fn(cfg: dict):
@@ -66,6 +71,7 @@ def build_regime_fn(cfg: dict):
 
 
 def run_experiment(cfg: dict, store=None) -> dict:
+    universe = _universe_from_cfg(cfg)
     prices = load_prices(cfg, store=store)
     signal_fn = build_signal_fn(cfg)
     regime_fn = build_regime_fn(cfg)
@@ -84,7 +90,7 @@ def run_experiment(cfg: dict, store=None) -> dict:
     results = {}
     for name in cfg["allocators"]:
         cls = ALLOCATORS[name]
-        allocator = cls(sleeve_map=SLEEVES) if name == "risk_parity" else cls()
+        allocator = cls(sleeve_map=universe.sleeves) if name == "risk_parity" else cls()
         results[name] = run_backtest(
             prices, signal_fn, allocator, budget,
             cov_method=cfg["risk"].get("cov_method", "shrunk"),
@@ -95,3 +101,10 @@ def run_experiment(cfg: dict, store=None) -> dict:
             regime_fn=regime_fn,
         )
     return results
+
+
+def _universe_from_cfg(cfg: dict) -> Universe:
+    """Universe named by cfg["data"]["universe"],
+    or the built-in twelve ETFs when unset."""
+    path = cfg["data"].get("universe")
+    return Universe.from_csv(path) if path else DEFAULT_UNIVERSE

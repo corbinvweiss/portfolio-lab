@@ -97,9 +97,6 @@ class ParquetDuckStore(PriceStore):
         self, prefix: str, key_cols: tuple[str, ...], value_cols: tuple[str, ...]
     ) -> None:
         """Collapse all snapshots to the latest observation per key_cols set"""
-        files = sorted(self.raw_dir.glob(f"{prefix}_captured=*.parquet"))
-        if not files:
-            return
         con = duckdb.connect()
         con.execute(
             f"""
@@ -121,6 +118,12 @@ class ParquetDuckStore(PriceStore):
         """return the latest values per key with optional as_of date.
 
         extra_where is simply the predicate with no AND, e.g. series = {series}"""
+        pattern = self.raw_dir / f"{prefix}_captured=*.parquet"
+        if not any(self.raw_dir.glob(pattern.name)):
+            raise FileNotFoundError(
+                f"No {prefix} snapshots in {self.raw_dir}. "
+                "Run `plab ingest` or `plab ingest-rates` first."
+            )
         preds: list[str] = []
         where_clause: str = ""
         if as_of is not None:
@@ -137,7 +140,7 @@ class ParquetDuckStore(PriceStore):
                     PARTITION BY {", ".join(key_cols)}
                     ORDER BY captured_on DESC
                 ) AS rn
-                FROM read_parquet('{self.raw_dir / prefix}_captured=*.parquet')
+                FROM read_parquet('{pattern}')
                 {where_clause}
             ) WHERE rn = 1"""
 

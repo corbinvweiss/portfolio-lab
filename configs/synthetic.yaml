@@ -3,6 +3,7 @@ data:
   source: synthetic
   as_of: null
   n_days: 3000
+  universe: null # path to a universe CSV, or null for the built-in 12-ETF sleeve
 signals:
   ts_momentum:
     lookback: 252
