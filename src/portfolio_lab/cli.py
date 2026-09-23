@@ -1,4 +1,4 @@
-"""Command line entry point: `plab run`, `plab ingest`, `plab snapshots`."""
+"""Command line entry point: `plab run`, `plab ingest`, `plab ingest-rates`, `plab snapshots`."""
 from __future__ import annotations
 
 import argparse
@@ -7,10 +7,12 @@ from pathlib import Path
 import pandas as pd
 
 from .data.store import ParquetDuckStore
-from .data.universe import SLEEVES
+from .data.universe import SLEEVES, TICKERS, Universe
 from .experiment import load_config, run_experiment
 from .report.tearsheet import build_tearsheet, metrics_table
 from .risk import covariance as cov_mod
+
+DEFAULT_SERIES = "DTB3"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,6 +27,11 @@ def main(argv: list[str] | None = None) -> int:
     ing_p = sub.add_parser("ingest", help="fetch prices and write a snapshot")
     ing_p.add_argument("--start", default="2005-01-01")
     ing_p.add_argument("--end", default=None)
+    ing_p.add_argument("--universe", default=None, help="path to csv universe of assets")
+
+    ing_r = sub.add_parser("ingest-rates", help="fetch rates and write a snapshot")
+    ing_r.add_argument("--series", default=DEFAULT_SERIES)
+    ing_r.add_argument("--start", default="2015-01-01")
 
     sub.add_parser("snapshots", help="list captured snapshots")
 
@@ -32,8 +39,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "ingest":
         from .data.ingest import ingest
-        path, df = ingest(ParquetDuckStore(), start=args.start, end=args.end)
+        tickers = Universe.from_csv(path=args.universe).tickers if args.universe else TICKERS
+        path, df = ingest(ParquetDuckStore(), tickers, start=args.start, end=args.end)
         print(f"wrote {path}  ({len(df):,} rows, {df['ticker'].nunique()} tickers)")
+        return 0
+
+    if args.command == "ingest-rates":
+        from .data.ingest import ingest_rates
+        path, df = ingest_rates(ParquetDuckStore(), series_id=args.series, start=args.start)
+        print(f"wrote {path} ({len(df):,} rows)")
         return 0
 
     if args.command == "snapshots":

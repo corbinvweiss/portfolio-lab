@@ -1,4 +1,5 @@
 """Rates live beside prices in the store, with the same snapshot semantics."""
+import io
 from datetime import date
 
 import pandas as pd
@@ -64,10 +65,11 @@ FRED_CSV = """observation_date,DTB3
 
 
 def test_fetch_fred_parses_and_drops_missing(monkeypatch):
+    real_read_csv = pd.read_csv
+    
     def fake_read_csv(url, **kwargs):
         assert "DTB3" in url
-        import io
-        return pd.read_csv(io.StringIO(FRED_CSV), **kwargs)
+        return real_read_csv(io.StringIO(FRED_CSV), **kwargs)
     monkeypatch.setattr(ingest_mod.pd, "read_csv", fake_read_csv)
     df = ingest_mod.fetch_fred("DTB3", start="2024-01-01")
     assert list(df.columns) == ["date", "series", "value"]

@@ -12,10 +12,14 @@ what you saw before.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
+from .store import PriceStore
 from .universe import TICKERS
+
+FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 
 
 def fetch_prices(
@@ -58,7 +62,49 @@ def fetch_prices(
     return out
 
 
-def ingest(store, tickers=TICKERS, start: str = "2005-01-01", end: str | None = None):
+def fetch_fred(series_id: str, start: str) -> pd.DataFrame:
+    """Fetch one FRED series as a long frame: date, series, value
+
+    Reads the public graph CSV endpoint. FRED marks missing observations with
+    "." and has used both DATE and observation_date as the date header, so the
+    columns are renamed by position. Values are returned as published, in percent.
+    """
+    url = f"{FRED_URL}?id={series_id}"
+    raw = pd.read_csv(url, na_values=".")
+    if raw.columns[1] != series_id:
+        raise ValueError(f"Expected FRED column {series_id!r}, got {raw.columns[1]!r}.")
+
+    df = (
+        # name the columns
+        raw.set_axis(["date", "value"], axis="columns")
+        # set the date column to datetime
+        .assign(date=lambda d: pd.to_datetime(d["date"]))
+        # filter dates >= start (including time of day)
+        .loc[lambda d: d["date"] >= pd.Timestamp(start)]
+        # drop null values
+        .dropna(subset=["value"])
+        # set the date column to dt.date (day rather than timestamp),
+        # set the series column to series_id
+        .assign(date=lambda d: d["date"].dt.date, series=series_id)
+        # sort by dates ascending
+        .sort_values("date")
+        # reset the frame's row index to 0, 1, 2, and throw out the old index.
+        .reset_index(drop=True)
+    )
+    return df[["date", "series", "value"]]
+
+
+def ingest(store: PriceStore, tickers=TICKERS, start: str = "2005-01-01", end: str | None = None):
     df = fetch_prices(tickers, start=start, end=end)
     path = store.write_snapshot(df, captured_on=datetime.now(timezone.utc).date())
+    return path, df
+
+
+def ingest_rates(
+    store: PriceStore,
+    series_id: str = "DTB3",
+    start: str = "2015-01-01",
+) -> tuple[Path, pd.DataFrame]:
+    df = fetch_fred(series_id, start=start)
+    path = store.write_rates(df, captured_on=datetime.now(timezone.utc).date())
     return path, df
