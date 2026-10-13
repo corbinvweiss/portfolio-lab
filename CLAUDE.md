@@ -8,7 +8,7 @@ Course context (syllabus, weekly briefs, lessons, docs rules) lives in `docs/SYL
 and `docs/specs/`; this file covers only the code.
 
 ```bash
-pip install -e ".[dev,ingest]"          # ingest extra pulls in yfinance
+pip install -e ".[dev,ingest,lab]"      # ingest pulls in yfinance; lab adds ipykernel
 
 pytest                                   # full suite (~seconds, synthetic data only)
 pytest tests/test_no_lookahead.py        # the suite that matters most

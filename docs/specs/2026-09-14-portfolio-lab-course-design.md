@@ -30,7 +30,7 @@ At the end of the course the repo should be a mature research tool that:
 | Protect if scope shrinks | Documentation and lessons |
 | Data | Willing to pay $30-60/month for historical index constituents |
 | Math depth | Derive the key results (Markowitz, CAPM, Ledoit-Wolf, Kelly), not just cite them |
-| Lesson format | One markdown lesson + lab per milestone |
+| Lesson format | One markdown lesson + lab per milestone (superseded by decisions/0001: one notebook) |
 | Derivatives | Exposure and financing, plus pricing basics (Black-Scholes, greeks, parity, futures fair value) |
 | Work split | Corbin writes all code; Claude is the professor: direction, derivations, review |
 | Recommender | All three framings, compared on the same inputs |
@@ -54,6 +54,9 @@ asks for it explicitly for that task.
    with questions.
 4. Write-up: Corbin writes `docs/lessons/NN-topic.md`. The milestone is done when the lesson
    is written, not when the code passes.
+
+> Superseded by [decisions/0001](../decisions/0001-lessons-are-notebooks.md): lessons are
+> notebooks, `docs/course/lessons/NN-topic.ipynb`.
 
 **Lesson template** (`docs/lessons/NN-topic.md`):
 
@@ -357,7 +360,8 @@ covariance annualised, signals emit views, all allocators end in `apply_constrai
 
 - **Keep and extend without a rebuild.** Faster, but Corbin would be reading Claude's
   invariants rather than owning them. Rejected per the interview.
-- **Notebook-first course.** Better for plots, worse for the durable record and for tests.
+- **Notebook-first course.** (Adopted after all for lessons: decisions/0001.) Better for
+  plots, worse for the durable record and for tests.
   Rejected; notebooks may be used as scratch under `notebooks/`.
 - **Breadth-first (every instrument on ETFs) before rigor.** More fun early, but every
   later number would be untrustworthy. Rejected; rigor sits in the middle so the first
@@ -417,6 +421,9 @@ docs/
   reference/               starting-point.md, data-sources.md, reading-list.md, glossary.md
   figures/NN-slug.png      the only committed images
 ```
+
+> Superseded by [decisions/0001](../decisions/0001-lessons-are-notebooks.md): lessons are
+> notebooks, `docs/course/lessons/NN-topic.ipynb`.
 
 Rules:
 

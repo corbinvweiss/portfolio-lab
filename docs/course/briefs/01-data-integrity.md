@@ -115,7 +115,7 @@ restatements, and their dates should line up with ex-dividend dates.
 | Modify `configs/baseline.yaml`, `configs/synthetic.yaml` | `data.universe` line |
 | Create `configs/week1.yaml` | Store-backed run on the week 1 universe |
 | Create `tests/test_returns.py`, `tests/test_universe.py`, `tests/test_rates.py`, `tests/test_snapshots.py` | One test file per unit |
-| Create `docs/course/lessons/01-data-integrity.md` | The deliverable |
+| Create `docs/course/lessons/01-data-integrity.ipynb` | The deliverable (see decisions/0001) |
 
 ---
 
@@ -353,7 +353,7 @@ git commit -m "Add Universe loaded from CSV with membership windows"
   - `plab ingest --universe configs/universe_week1.csv --start 2015-01-01`
   - `plab ingest-rates --series DTB3 --start 2015-01-01`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 """Rates live beside prices in the store, with the same snapshot semantics."""
@@ -457,11 +457,11 @@ def test_cli_ingest_uses_universe_file(monkeypatch, tmp_path):
     assert captured["tickers"] == ("SPY", "EFA", "IEF", "GLD", "AAPL", "MSFT", "JNJ", "XOM")
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/test_rates.py -q`
 
-- [ ] **Step 3: Implement the store side**
+- [x] **Step 3: Implement the store side**
 
 Design this before typing. `_rebuild_curated` is price-specific SQL. Generalise it into
 `_collapse_snapshots(prefix: str, key_cols: tuple[str, ...], value_cols: tuple[str, ...])`
@@ -477,7 +477,7 @@ rejected; values may be any float.
 
 `InMemoryStore` gets a second dict. Same replay logic as prices.
 
-- [ ] **Step 4: Implement the fetcher and CLI**
+- [x] **Step 4: Implement the fetcher and CLI**
 
 `fetch_fred` reads `https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}` with
 `pd.read_csv(url, na_values=".")`. FRED has used both `DATE` and `observation_date` as the
@@ -492,12 +492,12 @@ reference `ingest_mod.ingest` at call time (not a module-level `from .data.inges
 ingest`) so the CLI test can patch it; the current code already imports inside the
 handler, keep that shape.
 
-- [ ] **Step 5: Run the full suite and lint**
+- [x] **Step 5: Run the full suite and lint**
 
 Run: `.venv/bin/python -m pytest -q && .venv/bin/ruff check src tests`
 Expected: the four pre-existing store tests still pass alongside the new ones.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/portfolio_lab/data/store.py src/portfolio_lab/data/ingest.py src/portfolio_lab/cli.py tests/test_rates.py
@@ -529,7 +529,7 @@ git commit -m "Add rates table to the store, FRED fetcher, and ingest by univers
     `run_experiment` passes that universe's `sleeves` to `risk_parity` instead of the
     module constant `SLEEVES`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 from datetime import date
@@ -587,17 +587,17 @@ def test_experiment_default_universe_unchanged():
     assert set(wide.columns) == set(TICKERS)
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/test_snapshots.py -q`
 
-- [ ] **Step 3: Implement `snapshot_diff`**
+- [x] **Step 3: Implement `snapshot_diff`**
 
 Hint: `store.load_prices(as_of=earlier)` and `as_of=later` give two wide frames. Stack
 both to long, inner-join on `(date, ticker)`, keep rows where `abs(after - before) > tol`.
 Do not query parquet directly; the store is the only reader.
 
-- [ ] **Step 4: Wire the config knob and CLI**
+- [x] **Step 4: Wire the config knob and CLI**
 
 In `experiment.py`, add `_universe_from_cfg(cfg) -> Universe` returning
 `Universe.from_csv(path)` when `cfg["data"].get("universe")` is set, else
@@ -612,12 +612,12 @@ unchanged. It will not run until you have ingested; that is Task 5.
 
 Add the `diff-snapshots` subcommand.
 
-- [ ] **Step 5: Run everything and lint**
+- [x] **Step 5: Run everything and lint**
 
 Run: `.venv/bin/python -m pytest -q && .venv/bin/ruff check src tests && .venv/bin/plab run --config configs/synthetic.yaml --no-chart --outdir /tmp/plab-check`
 Expected: suite green; the synthetic run still prints three allocator rows.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/portfolio_lab/data/snapshots.py src/portfolio_lab/cli.py src/portfolio_lab/experiment.py configs tests/test_snapshots.py
@@ -629,14 +629,16 @@ git commit -m "Add snapshot diff and a data.universe config knob"
 ### Task 5: The experiment and the lesson
 
 **Files:**
-- Create: `docs/course/lessons/01-data-integrity.md`
-- Create: `notebooks/` scratch if you want plots; not committed unless you choose to
+- Create: `docs/course/lessons/01-data-integrity.ipynb` (copy `docs/course/lesson-template.ipynb`)
+
+Steps 2-6 are done in the lesson notebook itself: the code that produces each number sits
+in the cell beneath the prose that claims it. `notebooks/` stays available for dead ends.
 
 This task has a calendar dependency: the second snapshot must be taken about a week after
 the first. Do steps 1-3 on day one and steps 4-7 a week later. Fill the other days with
 the derivations and the lesson skeleton.
 
-- [ ] **Step 1: First ingestion (day 1)**
+- [x] **Step 1: First ingestion (day 1)**
 
 ```bash
 .venv/bin/plab ingest --universe configs/universe_week1.csv --start 2015-01-01
@@ -650,7 +652,7 @@ FRED CSV endpoint is rarely blocked.
 
 - [ ] **Step 2: Sanity checks (day 1)**
 
-In a Python session, load the wide prices and answer in the lesson:
+In the lesson notebook, load the wide prices and answer:
 
 - How many trading days per ticker? Do all eight start on 2015-01-02?
 - Is `SPY` adjusted close on 2015-01-02 equal to the price you can find quoted for that
@@ -702,7 +704,8 @@ a ticker's history, and what kind of vendor change would *not* be harmless.
 
 - [ ] **Step 7: Write the lesson**
 
-`docs/course/lessons/01-data-integrity.md` following the template in the spec.
+Finish `docs/course/lessons/01-data-integrity.ipynb`, then Kernel > Restart & Run All so
+the committed outputs come from one clean top-to-bottom run (`tests/test_docs.py` checks).
 The "Concept and derivation" section must contain, in your own words and notation:
 
 1. the two return identities and the cross-time vs cross-asset asymmetry;
@@ -718,7 +721,7 @@ even if the answer is short.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add docs/course/lessons/01-data-integrity.md
+git add docs/course/lessons/01-data-integrity.ipynb
 git commit -m "Lesson 1: data integrity and return math"
 ```
 

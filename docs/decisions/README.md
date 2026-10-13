@@ -23,4 +23,4 @@ The new contract or invariant, stated precisely enough to test.
 What breaks, what tests change, what later weeks must respect.
 ```
 
-No decisions recorded yet.
+- [0001. Lessons are notebooks](0001-lessons-are-notebooks.md)

@@ -21,6 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 ingest = ["yfinance>=0.2.40"]
 dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4"]
+lab = ["ipykernel>=6.29", "nbclient>=0.10"]   # run lesson notebooks against .venv
 
 [project.scripts]
 plab = "portfolio_lab.cli:main"
